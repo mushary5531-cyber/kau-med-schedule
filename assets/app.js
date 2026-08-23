@@ -1,0 +1,354 @@
+/* ===== i18n ===== */
+const I18N = {
+  ar: {
+    dir: "rtl", lang: "ar",
+    siteTitle: "جدولي", siteSub: "كلية الطب - جامعة الملك عبدالعزيز",
+    changeSelection: "تغيير الاختيار",
+    heroTitle: "اختر سنتك الدراسية",
+    heroSub: "وبعدها هيصير جدولك يظهر تلقائيًا في كل مرة تفتح فيها الموقع",
+    pickGroup: "اختر مجموعتك (السنة الثالثة)",
+    pickGroupSub: "مقرر الجهاز الدوري والتنفسي — Breathing & Circulation Module",
+    back: "رجوع",
+    scheduleFor: "جدولك",
+    moduleName: "مقرر الجهاز الدوري والتنفسي — Breathing & Circulation Module",
+    disclaimer: "⚠️ تم بناء الجدول يدويًا من التقويم الرسمي الصادر من كلية الطب. في حال وجود أي تعارض، يُعتمد الجدول الرسمي الصادر من الكلية.",
+    footerNote: "غير رسمي — لأغراض تنظيمية شخصية فقط",
+    year1desc: "مقدمة طبية عامة", year2desc: "علوم طبية أساسية", year3desc: "جدول تفصيلي حسب المجموعة",
+    hasSchedule: "جدول أسبوعي مفصّل",
+    semester1: "الفصل الدراسي الأول", semester2: "الفصل الدراسي الثاني",
+    weeksLabel: "أسبوع",
+    calendarSem1: "التقويم الأكاديمي — الفصل الأول",
+    calendarSem2: "التقويم الأكاديمي — الفصل الثاني",
+    weekLabel: "الأسبوع",
+    breakLabel: "استراحة",
+    emptyLabel: "لا يوجد نشاط مسجّل",
+    days: { Sunday: "الأحد", Monday: "الإثنين", Tuesday: "الثلاثاء", Wednesday: "الأربعاء", Thursday: "الخميس" }
+  },
+  en: {
+    dir: "ltr", lang: "en",
+    siteTitle: "My Schedule", siteSub: "Faculty of Medicine - King Abdulaziz University",
+    changeSelection: "Change selection",
+    heroTitle: "Choose your study year",
+    heroSub: "Your schedule will load automatically next time you open this site",
+    pickGroup: "Choose your group (3rd year)",
+    pickGroupSub: "Breathing & Circulation Module",
+    back: "Back",
+    scheduleFor: "Your schedule",
+    moduleName: "Breathing & Circulation Module",
+    disclaimer: "⚠️ This schedule was manually compiled from the Faculty of Medicine's official timetable. In case of any discrepancy, the official timetable issued by the Faculty prevails.",
+    footerNote: "Unofficial — for personal organizational use only",
+    year1desc: "General medical foundation", year2desc: "Basic medical sciences", year3desc: "Detailed schedule by group",
+    hasSchedule: "Detailed weekly schedule",
+    semester1: "First Semester", semester2: "Second Semester",
+    weeksLabel: "weeks",
+    calendarSem1: "Academic Calendar — Semester 1",
+    calendarSem2: "Academic Calendar — Semester 2",
+    weekLabel: "Week",
+    breakLabel: "Break",
+    emptyLabel: "No activity recorded",
+    days: { Sunday: "Sunday", Monday: "Monday", Tuesday: "Tuesday", Wednesday: "Wednesday", Thursday: "Thursday" }
+  }
+};
+
+let currentLang = localStorage.getItem("kauLang") || "ar";
+let overviewData = null;
+let scheduleData = null;
+
+const els = {
+  yearGrid: document.getElementById("yearGrid"),
+  groupPicker: document.getElementById("groupPicker"),
+  groupGrid: document.getElementById("groupGrid"),
+  backToYears: document.getElementById("backToYears"),
+  selectionScreen: document.getElementById("selectionScreen"),
+  overviewScreen: document.getElementById("overviewScreen"),
+  scheduleScreen: document.getElementById("scheduleScreen"),
+  overviewTitle: document.getElementById("overviewTitle"),
+  calendarStrip: document.getElementById("calendarStrip"),
+  semesterCols: document.getElementById("semesterCols"),
+  overviewBack: document.getElementById("overviewBack"),
+  scheduleBack: document.getElementById("scheduleBack"),
+  currentGroupLabel: document.getElementById("currentGroupLabel"),
+  weekTabs: document.getElementById("weekTabs"),
+  weekContent: document.getElementById("weekContent"),
+  changeSelectionBtn: document.getElementById("changeSelectionBtn"),
+  langToggle: document.getElementById("langToggle"),
+};
+
+/* ===== i18n apply ===== */
+function applyLang() {
+  const t = I18N[currentLang];
+  document.documentElement.lang = t.lang;
+  document.documentElement.dir = t.dir;
+  document.title = currentLang === "ar" ? "جدولي | كلية الطب - جامعة الملك عبدالعزيز" : "My Schedule | KAU Faculty of Medicine";
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (t[key]) el.innerHTML = t[key];
+  });
+  els.langToggle.textContent = currentLang === "ar" ? "EN" : "AR";
+  localStorage.setItem("kauLang", currentLang);
+}
+
+els.langToggle.addEventListener("click", () => {
+  currentLang = currentLang === "ar" ? "en" : "ar";
+  applyLang();
+  renderCurrentView();
+});
+
+/* ===== data loading ===== */
+async function loadData() {
+  const [ov, sch] = await Promise.all([
+    fetch("data/overview.json").then(r => r.json()),
+    fetch("data/schedule-3rd-year.json").then(r => r.json()),
+  ]);
+  overviewData = ov;
+  scheduleData = sch;
+}
+
+/* ===== selection screen ===== */
+function buildYearGrid() {
+  const t = I18N[currentLang];
+  els.yearGrid.innerHTML = "";
+  overviewData.years.forEach(y => {
+    const card = document.createElement("div");
+    card.className = "year-card";
+    const desc = currentLang === "ar" ? (y.year === 3 ? t.year3desc : y.year === 2 ? t.year2desc : t.year1desc)
+                                       : (y.year === 3 ? t.year3desc : y.year === 2 ? t.year2desc : t.year1desc);
+    card.innerHTML = `
+      <div class="num">${y.year}</div>
+      <h3>${currentLang === "ar" ? y.titleAr : y.titleEn}</h3>
+      <p>${desc}</p>
+      ${y.hasDetailedSchedule ? `<span class="badge">${t.hasSchedule}</span>` : ""}
+    `;
+    card.addEventListener("click", () => {
+      if (y.hasDetailedSchedule) {
+        showGroupPicker();
+      } else {
+        selectYear(y.year);
+      }
+    });
+    els.yearGrid.appendChild(card);
+  });
+}
+
+function showGroupPicker() {
+  els.groupPicker.classList.remove("hidden");
+  els.yearGrid.classList.add("hidden");
+  const t = I18N[currentLang];
+  const groups = ["A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4"];
+  els.groupGrid.innerHTML = "";
+  groups.forEach(g => {
+    const btn = document.createElement("button");
+    btn.className = "group-btn " + (g.startsWith("A") ? "group-a" : "group-b");
+    btn.textContent = g;
+    btn.addEventListener("click", () => selectGroup(g));
+    els.groupGrid.appendChild(btn);
+  });
+}
+
+els.backToYears.addEventListener("click", () => {
+  els.groupPicker.classList.add("hidden");
+  els.yearGrid.classList.remove("hidden");
+});
+
+/* ===== selection persistence ===== */
+function selectYear(year) {
+  localStorage.setItem("kauSelection", JSON.stringify({ type: "overview", year }));
+  showOverview(year);
+}
+
+function selectGroup(group) {
+  localStorage.setItem("kauSelection", JSON.stringify({ type: "schedule", group }));
+  showSchedule(group);
+}
+
+function clearSelection() {
+  localStorage.removeItem("kauSelection");
+  showSelectionScreen();
+}
+
+els.changeSelectionBtn.addEventListener("click", clearSelection);
+els.overviewBack.addEventListener("click", clearSelection);
+els.scheduleBack.addEventListener("click", clearSelection);
+
+/* ===== screen switching ===== */
+function showSelectionScreen() {
+  els.selectionScreen.classList.remove("hidden");
+  els.overviewScreen.classList.add("hidden");
+  els.scheduleScreen.classList.add("hidden");
+  els.changeSelectionBtn.classList.add("hidden");
+  els.groupPicker.classList.add("hidden");
+  els.yearGrid.classList.remove("hidden");
+  buildYearGrid();
+}
+
+/* ===== overview screen ===== */
+function renderEventRow(ev) {
+  const t = I18N[currentLang];
+  const date = ev.dateG.replace(/-/g, "/");
+  return `<div class="event-row">
+    <span class="date">${date}</span>
+    <span class="label">${currentLang === "ar" ? ev.labelAr : ev.labelEn}</span>
+  </div>`;
+}
+
+function showOverview(year) {
+  els.selectionScreen.classList.add("hidden");
+  els.scheduleScreen.classList.add("hidden");
+  els.overviewScreen.classList.remove("hidden");
+  els.changeSelectionBtn.classList.remove("hidden");
+
+  const t = I18N[currentLang];
+  const y = overviewData.years.find(yy => yy.year === year);
+  els.overviewTitle.textContent = currentLang === "ar" ? y.titleAr : y.titleEn;
+
+  const cal = overviewData.calendar;
+  els.calendarStrip.innerHTML = `
+    <div class="calendar-card">
+      <h3>${t.calendarSem1}</h3>
+      <div class="meta">${cal.semester1.weeks} ${t.weeksLabel} · ${cal.semester1.studyDays} ${currentLang === "ar" ? "يوم دراسي" : "study days"}</div>
+      ${cal.semester1.events.map(renderEventRow).join("")}
+    </div>
+    <div class="calendar-card">
+      <h3>${t.calendarSem2}</h3>
+      <div class="meta">${cal.semester2.weeks} ${t.weeksLabel} · ${cal.semester2.studyDays} ${currentLang === "ar" ? "يوم دراسي" : "study days"}</div>
+      ${cal.semester2.events.map(renderEventRow).join("")}
+    </div>
+  `;
+
+  els.semesterCols.innerHTML = `
+    <div class="semester-card">
+      <h3>${t.semester1}</h3>
+      <span class="weeks-tag">${y.semester1.weeks} ${t.weeksLabel}</span>
+      <ul class="subject-list">
+        ${y.semester1.subjects.map(s => `<li>${currentLang === "ar" ? s.ar : s.en}<span class="en">${currentLang === "ar" ? s.en : s.ar}</span></li>`).join("")}
+      </ul>
+    </div>
+    <div class="semester-card">
+      <h3>${t.semester2}</h3>
+      <span class="weeks-tag">${y.semester2.weeks} ${t.weeksLabel}</span>
+      <ul class="subject-list">
+        ${y.semester2.subjects.map(s => `<li>${currentLang === "ar" ? s.ar : s.en}<span class="en">${currentLang === "ar" ? s.en : s.ar}</span></li>`).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+/* ===== schedule screen ===== */
+let activeWeekIndex = 0;
+let activeGroup = null;
+
+function activityTagClass(activity) {
+  if (!activity) return "";
+  const m = activity.match(/^(IL|FC|OL|Pr|P|CBD|SPP\d*|PBL|SDL|Tutorial)/i);
+  if (!m) return "";
+  const p = m[1].toUpperCase();
+  if (p.startsWith("SPP")) return "tag-SPP";
+  if (p === "TUTORIAL") return "tag-Tutorial";
+  if (["FINAL", "QUIZ"].some(k => activity.toUpperCase().includes(k))) return "tag-exam";
+  return "tag-" + p;
+}
+
+function renderActivityCell(activity) {
+  if (!activity || activity.trim() === "") {
+    const t = I18N[currentLang];
+    return `<span class="slot-activity empty">${t.emptyLabel}</span>`;
+  }
+  if (activity.trim().toLowerCase() === "break") {
+    const t = I18N[currentLang];
+    return `<span class="slot-activity break-slot">${t.breakLabel}</span>`;
+  }
+  const cls = activityTagClass(activity);
+  const m = activity.match(/^([A-Za-z]+\d*):?\s*/);
+  let rest = activity;
+  let tag = "";
+  if (m && cls) {
+    tag = `<span class="tag ${cls}">${m[1]}</span>`;
+    rest = activity.slice(m[0].length);
+  }
+  return `<span class="slot-activity">${tag}${escapeHtml(rest)}</span>`;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function showSchedule(group) {
+  activeGroup = group;
+  els.selectionScreen.classList.add("hidden");
+  els.overviewScreen.classList.add("hidden");
+  els.scheduleScreen.classList.remove("hidden");
+  els.changeSelectionBtn.classList.remove("hidden");
+  els.currentGroupLabel.textContent = group;
+
+  buildWeekTabs();
+  renderWeek(activeWeekIndex);
+}
+
+function buildWeekTabs() {
+  const t = I18N[currentLang];
+  els.weekTabs.innerHTML = "";
+  scheduleData.weeks.forEach((w, idx) => {
+    const btn = document.createElement("button");
+    btn.className = "week-tab" + (idx === activeWeekIndex ? " active" : "");
+    btn.textContent = `${t.weekLabel} ${w.weekNumber}`;
+    btn.addEventListener("click", () => {
+      activeWeekIndex = idx;
+      buildWeekTabs();
+      renderWeek(idx);
+    });
+    els.weekTabs.appendChild(btn);
+  });
+}
+
+function renderWeek(idx) {
+  const t = I18N[currentLang];
+  const week = scheduleData.weeks[idx];
+  if (!week) return;
+
+  let html = `<div class="week-theme">${escapeHtml(week.theme)} <span class="range">— ${escapeHtml(week.dateRange)}</span></div>`;
+
+  week.days.forEach(day => {
+    const slots = day.groups[activeGroup] || [];
+    const dayLabel = t.days[day.day] || day.day;
+    html += `<div class="day-card">
+      <div class="day-head"><span>${dayLabel}</span><span class="day-date">${escapeHtml(day.date)}</span></div>
+      <table class="slot-table"><tbody>
+        ${slots.map(s => `<tr class="${s.time === '12-1' ? 'break-row' : ''}">
+            <td class="slot-time">${s.time}</td>
+            <td>${renderActivityCell(s.activity)}</td>
+          </tr>`).join("")}
+      </tbody></table>
+    </div>`;
+  });
+
+  els.weekContent.innerHTML = html;
+}
+
+/* ===== boot ===== */
+function renderCurrentView() {
+  const raw = localStorage.getItem("kauSelection");
+  if (!raw) {
+    showSelectionScreen();
+    return;
+  }
+  try {
+    const sel = JSON.parse(raw);
+    if (sel.type === "schedule" && sel.group) {
+      showSchedule(sel.group);
+    } else if (sel.type === "overview" && sel.year) {
+      showOverview(sel.year);
+    } else {
+      showSelectionScreen();
+    }
+  } catch (e) {
+    showSelectionScreen();
+  }
+}
+
+(async function init() {
+  applyLang();
+  await loadData();
+  renderCurrentView();
+})();

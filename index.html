@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>جدولي | كلية الطب - جامعة الملك عبدالعزيز</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-icon">🩺</span>
+      <div class="brand-text">
+        <strong data-i18n="siteTitle">جدولي</strong>
+        <span data-i18n="siteSub">كلية الطب - جامعة الملك عبدالعزيز</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="changeSelectionBtn" class="btn-ghost hidden" data-i18n="changeSelection">تغيير الاختيار</button>
+      <button id="langToggle" class="btn-lang">EN</button>
+    </div>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- SELECTION SCREEN -->
+  <section id="selectionScreen" class="screen">
+    <div class="hero">
+      <h1 data-i18n="heroTitle">اختر سنتك الدراسية</h1>
+      <p data-i18n="heroSub">وبعدها هيصير جدولك يظهر تلقائيًا في كل مرة تفتح فيها الموقع</p>
+    </div>
+
+    <div class="year-grid" id="yearGrid"></div>
+
+    <div id="groupPicker" class="group-picker hidden">
+      <h2 data-i18n="pickGroup">اختر مجموعتك (السنة الثالثة)</h2>
+      <p class="muted" data-i18n="pickGroupSub">مقرر الجهاز الدوري والتنفسي — Breathing &amp; Circulation Module</p>
+      <div class="group-grid" id="groupGrid"></div>
+      <button id="backToYears" class="btn-ghost" data-i18n="back">رجوع</button>
+    </div>
+  </section>
+
+  <!-- OVERVIEW SCREEN (Year 1 / Year 2) -->
+  <section id="overviewScreen" class="screen hidden">
+    <div class="page-head">
+      <h1 id="overviewTitle"></h1>
+      <button class="btn-ghost small" id="overviewBack" data-i18n="changeSelection">تغيير الاختيار</button>
+    </div>
+
+    <div class="calendar-strip" id="calendarStrip"></div>
+
+    <div class="semester-cols" id="semesterCols"></div>
+  </section>
+
+  <!-- SCHEDULE SCREEN (Year 3, group-specific) -->
+  <section id="scheduleScreen" class="screen hidden">
+    <div class="page-head">
+      <div>
+        <h1><span data-i18n="scheduleFor">جدولك</span> — <span id="currentGroupLabel" class="group-pill"></span></h1>
+        <p class="muted" data-i18n="moduleName">مقرر الجهاز الدوري والتنفسي — Breathing &amp; Circulation Module</p>
+      </div>
+      <button class="btn-ghost small" id="scheduleBack" data-i18n="changeSelection">تغيير الاختيار</button>
+    </div>
+
+    <div class="week-tabs" id="weekTabs"></div>
+
+    <div id="weekContent"></div>
+
+    <p class="disclaimer" data-i18n="disclaimer">
+      ⚠️ تم بناء الجدول يدويًا من التقويم الرسمي الصادر من كلية الطب. في حال وجود أي تعارض، يُعتمد الجدول الرسمي الصادر من الكلية.
+    </p>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <span data-i18n="footerNote">غير رسمي — لأغراض تنظيمية شخصية فقط</span>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
