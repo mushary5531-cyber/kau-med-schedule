@@ -248,6 +248,94 @@ function activityTagClass(activity) {
   return "tag-" + p;
 }
 
+const DEPARTMENTS = {
+  Anatomy: { ar: "تشريح", en: "Anatomy" },
+  Histology: { ar: "أنسجة", en: "Histology" },
+  Physiology: { ar: "فسيولوجي", en: "Physiology" },
+  Biochemistry: { ar: "كيمياء حيوية", en: "Biochemistry" },
+  Hematology: { ar: "أمراض الدم", en: "Hematology" },
+  Microbiology: { ar: "أحياء دقيقة", en: "Microbiology" },
+  Pathology: { ar: "باثولوجي", en: "Pathology" },
+  Pharmacology: { ar: "فارماكولوجي", en: "Pharmacology" }
+};
+
+function activityDepartment(activity) {
+  const value = activity.toLowerCase();
+
+  const explicit = [
+    ["anatomy", "Anatomy"], ["histology", "Histology"],
+    ["physiology", "Physiology"], ["phsiology", "Physiology"],
+    ["biochemistry", "Biochemistry"], ["microbiology", "Microbiology"],
+    ["pathology", "Pathology"], ["pharmacology", "Pharmacology"]
+  ];
+  for (const [term, department] of explicit) {
+    if (value.includes(term)) return department;
+  }
+
+  const rules = [
+    ["Anatomy", [
+      "mediastinum", "pericardium", "external features of the heart",
+      "internal features of the heart", "development of respiratory",
+      "development of the heart", "thoracic wall", "nose and para nasal",
+      "anatomy of the larynx", "lung and its relations", "radiological anatomy",
+      "congenital anomalies and abnormal development"
+    ]],
+    ["Histology", ["histology of", "mucosal immune system", "lymphatic system", "myocardium"]],
+    ["Physiology", [
+      "mechanics of breathing", "pressure-volume", "coronary circulation",
+      "vascular endothelium", "cardiac automaticity", "cardiac contractility",
+      "cardiac cycle", "cardiac output", "normal ecg", "abnormal ecg",
+      "metabolic functions of the lung", "transport of carbon dioxide",
+      "transport of oxygen", "gas diffusion", "neural control of breathing",
+      "physiological organization", "regulation of abp", "acid-base homeostasis",
+      "heart sounds", "abp measurment", "lung volumes and capacities",
+      "chemical control of breathing"
+    ]],
+    ["Biochemistry", [
+      "haem synthesis", "haem catabolism", "plasma proteins", "cholesterol metabolism",
+      "plasma lipoproteins", "disorders of plasma lipoproteins", "lipid profile",
+      "ck-mb", "g6pd", "diagnostic cardiac markers"
+    ]],
+    ["Hematology", [
+      "anemia, polycythemia", "hemolytic anemia", "hematopoeisis",
+      "hematopoiesis", "lymphadenopathy"
+    ]],
+    ["Microbiology", [
+      "malaria", "babesiosis", "endocarditis", "pulmonary infection",
+      "respiratory tract infections", "treatment of tb", "lung tb",
+      "parasit", "filariasis", "leishmaniasis", "verminous pneumonia",
+      "lung immunology", "hypersensitivity reaction", "autoimmune disorders",
+      "immune dysregulation", "immunodeficiency disorders"
+    ]],
+    ["Pathology", [
+      "atherosclerosis", "aneurysm", "ischemic heart disease", "myocarditis",
+      "pericardial disease", "vasculitis", "obstructive airway disease",
+      "restrictive airway disease", "bronchial asthma", "atelectasis",
+      "acute lung injury", "pulmonary vessel disease", "lung and pleural tumors",
+      "upper respiratory tract neoplasm", "vessles and vascular tumors",
+      "hypertension", "valvular heart", "lymph node pathology", "cardiomyopathy"
+    ]],
+    ["Pharmacology", [
+      "antiplatelet", "drugs affecting", "treatment of hematological malignancy",
+      "drugs used in treatment", "drug therapy", "anti-anginal", "anti-lipidemic",
+      "antiarrhythmic", "antihypertensive", "immune suppressants",
+      "immunomodulators", "treatment of anemia", "assessment of drug effect"
+    ]]
+  ];
+
+  for (const [department, terms] of rules) {
+    if (terms.some(term => value.includes(term))) return department;
+  }
+  return null;
+}
+
+function renderDepartmentBadge(activity) {
+  const department = activityDepartment(activity);
+  if (!department) return "";
+  const label = DEPARTMENTS[department][currentLang];
+  return `<span class="department department-${department}">${label}</span>`;
+}
+
 function renderActivityCell(activity) {
   if (!activity || activity.trim() === "") {
     const t = I18N[currentLang];
@@ -265,7 +353,8 @@ function renderActivityCell(activity) {
     tag = `<span class="tag ${cls}">${m[1]}</span>`;
     rest = activity.slice(m[0].length);
   }
-  return `<span class="slot-activity">${tag}${escapeHtml(rest)}</span>`;
+  const department = renderDepartmentBadge(activity);
+  return `<span class="slot-activity">${tag}${escapeHtml(rest)}${department}</span>`;
 }
 
 function escapeHtml(str) {
