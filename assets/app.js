@@ -363,8 +363,45 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+function scheduleDateKey(dateText) {
+  const months = {
+    jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+    jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
+  };
+  const match = dateText.trim().match(/^([A-Za-z]{3})\s+(\d{4})\s+(\d{1,2})$/);
+  if (!match) return null;
+  const month = months[match[1].toLowerCase()];
+  if (!month) return null;
+  return `${match[2]}-${month}-${match[3].padStart(2, "0")}`;
+}
+
+function localDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function findTodayWeekIndex() {
+  const today = localDateKey();
+  return scheduleData.weeks.findIndex(week =>
+    week.days.some(day => scheduleDateKey(day.date) === today)
+  );
+}
+
+function scrollToToday() {
+  requestAnimationFrame(() => {
+    const todayCard = els.weekContent.querySelector(".day-card.today");
+    if (todayCard) todayCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    const activeTab = els.weekTabs.querySelector(".week-tab.active");
+    if (activeTab) activeTab.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  });
+}
+
 function showSchedule(group) {
   activeGroup = group;
+  const todayWeekIndex = findTodayWeekIndex();
+  if (todayWeekIndex !== -1) activeWeekIndex = todayWeekIndex;
   els.selectionScreen.classList.add("hidden");
   els.overviewScreen.classList.add("hidden");
   els.scheduleScreen.classList.remove("hidden");
@@ -373,6 +410,7 @@ function showSchedule(group) {
 
   buildWeekTabs();
   renderWeek(activeWeekIndex);
+  scrollToToday();
 }
 
 function buildWeekTabs() {
@@ -401,7 +439,8 @@ function renderWeek(idx) {
   week.days.forEach(day => {
     const slots = day.groups[activeGroup] || [];
     const dayLabel = t.days[day.day] || day.day;
-    html += `<div class="day-card">
+    const isToday = scheduleDateKey(day.date) === localDateKey();
+    html += `<div class="day-card${isToday ? " today" : ""}">
       <div class="day-head"><span>${dayLabel}</span><span class="day-date">${escapeHtml(day.date)}</span></div>
       <table class="slot-table"><tbody>
         ${slots.map(s => `<tr class="${s.time === '12-1' ? 'break-row' : ''}">
