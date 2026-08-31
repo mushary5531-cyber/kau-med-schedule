@@ -343,6 +343,28 @@ tr.break-row { background: #fafafa; }
 .tag-Tutorial{ background: #ddf3ea; color: #147a4d; }
 .tag-exam{ background: #fbdede; color: #b3261e; }
 
+.department {
+  display: inline-block;
+  margin-inline-start: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--teal-50);
+  border: 1px solid var(--teal-100);
+  color: var(--teal-700);
+  font-size: 9.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.department-Anatomy { background: #fff3df; border-color: #f1d7a7; color: #8a5b0a; }
+.department-Histology { background: #f8e8f2; border-color: #edc8df; color: #8b3469; }
+.department-Physiology { background: #e6f5f2; border-color: #c5e8e1; color: #0e6b60; }
+.department-Biochemistry { background: #eeeafb; border-color: #d9d0f5; color: #5940a0; }
+.department-Hematology { background: #fde8e8; border-color: #f3caca; color: #a33434; }
+.department-Microbiology { background: #e8f3fb; border-color: #c9e3f4; color: #266b95; }
+.department-Pathology { background: #f3e9e3; border-color: #e3cec1; color: #7b4e34; }
+.department-Pharmacology { background: #edf4dd; border-color: #d8e7b8; color: #577324; }
+
 .disclaimer {
   font-size: 12.5px;
   color: var(--muted);
