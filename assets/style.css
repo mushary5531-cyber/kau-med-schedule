@@ -283,6 +283,39 @@ html[dir="ltr"] .group-btn.group-b { box-shadow: inset -3px 0 0 var(--gold); }
 }
 .week-theme .range { color: var(--muted); font-weight: 500; }
 
+.week-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -6px 0 16px;
+  padding: 9px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.progress-text {
+  color: var(--teal-700);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.progress-track {
+  flex: 1;
+  height: 7px;
+  overflow: hidden;
+  background: var(--teal-100);
+  border-radius: 999px;
+}
+.progress-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal-500), var(--teal-700));
+  border-radius: inherit;
+  transition: width 0.25s ease;
+}
+
 .day-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -324,6 +357,57 @@ html[dir="ltr"] .group-btn.group-b { box-shadow: inset -3px 0 0 var(--gold); }
   font-size: 12.5px;
   white-space: nowrap;
 }
+.activity-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.lecture-check {
+  flex: 0 0 auto;
+  display: inline-flex;
+  cursor: pointer;
+  padding: 2px;
+}
+.lecture-check input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.checkmark {
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #b8cfca;
+  border-radius: 6px;
+  background: #fff;
+  transition: all 0.15s ease;
+}
+.lecture-check input:focus-visible + .checkmark {
+  outline: 3px solid rgba(46, 196, 174, 0.28);
+  outline-offset: 2px;
+}
+.lecture-check input:checked + .checkmark {
+  background: var(--teal-600);
+  border-color: var(--teal-600);
+}
+.lecture-check input:checked + .checkmark::after {
+  content: "✓";
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+.slot-table tr.completed .slot-activity {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.slot-table tr.completed {
+  background: var(--teal-50);
+}
+
 .slot-activity { color: var(--ink); }
 .slot-activity.empty { color: var(--muted); font-style: italic; }
 .slot-activity.break-slot { color: var(--muted); }
