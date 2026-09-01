@@ -362,8 +362,12 @@ function lectureChecklistId(date, time, activity) {
   return `lecture-${(hash >>> 0).toString(36)}`;
 }
 
+function isCoreLecture(activity) {
+  return /^(IL|FC|OL|CBD):\s*/i.test((activity || "").trim());
+}
+
 function renderLectureChecklist(date, slot) {
-  if (!activityDepartment(slot.activity)) return "";
+  if (!isCoreLecture(slot.activity)) return "";
   const id = lectureChecklistId(date, slot.time, slot.activity);
   const checked = Boolean(readChecklist()[id]);
   const label = I18N[currentLang].markComplete;
