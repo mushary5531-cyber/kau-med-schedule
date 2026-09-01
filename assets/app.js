@@ -22,6 +22,9 @@ const I18N = {
     weekLabel: "الأسبوع",
     breakLabel: "استراحة",
     emptyLabel: "لا يوجد نشاط مسجّل",
+    progressLabel: "أنجزت",
+    progressOf: "من",
+    markComplete: "تحديد كمُنجزة",
     days: { Sunday: "الأحد", Monday: "الإثنين", Tuesday: "الثلاثاء", Wednesday: "الأربعاء", Thursday: "الخميس" }
   },
   en: {
@@ -46,6 +49,9 @@ const I18N = {
     weekLabel: "Week",
     breakLabel: "Break",
     emptyLabel: "No activity recorded",
+    progressLabel: "Completed",
+    progressOf: "of",
+    markComplete: "Mark as completed",
     days: { Sunday: "Sunday", Monday: "Monday", Tuesday: "Tuesday", Wednesday: "Wednesday", Thursday: "Thursday" }
   }
 };
@@ -336,6 +342,65 @@ function renderDepartmentBadge(activity) {
   return `<span class="department department-${department}">${label}</span>`;
 }
 
+const CHECKLIST_STORAGE_KEY = "kauLectureChecklist";
+
+function readChecklist() {
+  try {
+    return JSON.parse(localStorage.getItem(CHECKLIST_STORAGE_KEY) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function lectureChecklistId(date, time, activity) {
+  const source = `${activeGroup}|${date}|${time}|${activity}`;
+  let hash = 2166136261;
+  for (let i = 0; i < source.length; i++) {
+    hash ^= source.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `lecture-${(hash >>> 0).toString(36)}`;
+}
+
+function renderLectureChecklist(date, slot) {
+  if (!activityDepartment(slot.activity)) return "";
+  const id = lectureChecklistId(date, slot.time, slot.activity);
+  const checked = Boolean(readChecklist()[id]);
+  const label = I18N[currentLang].markComplete;
+  return `<label class="lecture-check" title="${label}">
+    <input type="checkbox" data-lecture-id="${id}" aria-label="${label}" ${checked ? "checked" : ""}>
+    <span class="checkmark" aria-hidden="true"></span>
+  </label>`;
+}
+
+function bindChecklistEvents() {
+  els.weekContent.querySelectorAll("[data-lecture-id]").forEach(input => {
+    const row = input.closest("tr");
+    row.classList.toggle("completed", input.checked);
+    input.addEventListener("change", () => {
+      const checklist = readChecklist();
+      if (input.checked) checklist[input.dataset.lectureId] = true;
+      else delete checklist[input.dataset.lectureId];
+      localStorage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify(checklist));
+      row.classList.toggle("completed", input.checked);
+      updateWeekProgress();
+    });
+  });
+}
+
+function updateWeekProgress() {
+  const boxes = [...els.weekContent.querySelectorAll("[data-lecture-id]")];
+  const completed = boxes.filter(box => box.checked).length;
+  const progress = els.weekContent.querySelector(".week-progress");
+  if (!progress) return;
+  const t = I18N[currentLang];
+  progress.querySelector(".progress-text").textContent =
+    `${t.progressLabel} ${completed} ${t.progressOf} ${boxes.length}`;
+  const percent = boxes.length ? Math.round((completed / boxes.length) * 100) : 0;
+  progress.querySelector(".progress-fill").style.width = `${percent}%`;
+  progress.setAttribute("aria-valuenow", String(percent));
+}
+
 function renderActivityCell(activity) {
   if (!activity || activity.trim() === "") {
     const t = I18N[currentLang];
@@ -434,7 +499,11 @@ function renderWeek(idx) {
   const week = scheduleData.weeks[idx];
   if (!week) return;
 
-  let html = `<div class="week-theme">${escapeHtml(week.theme)} <span class="range">— ${escapeHtml(week.dateRange)}</span></div>`;
+  let html = `<div class="week-theme">${escapeHtml(week.theme)} <span class="range">— ${escapeHtml(week.dateRange)}</span></div>
+    <div class="week-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <span class="progress-text"></span>
+      <span class="progress-track"><span class="progress-fill"></span></span>
+    </div>`;
 
   week.days.forEach(day => {
     const slots = day.groups[activeGroup] || [];
@@ -445,13 +514,18 @@ function renderWeek(idx) {
       <table class="slot-table"><tbody>
         ${slots.map(s => `<tr class="${s.time === '12-1' ? 'break-row' : ''}">
             <td class="slot-time">${s.time}</td>
-            <td>${renderActivityCell(s.activity)}</td>
+            <td class="activity-cell">
+              ${renderActivityCell(s.activity)}
+              ${renderLectureChecklist(day.date, s)}
+            </td>
           </tr>`).join("")}
       </tbody></table>
     </div>`;
   });
 
   els.weekContent.innerHTML = html;
+  bindChecklistEvents();
+  updateWeekProgress();
 }
 
 /* ===== boot ===== */
