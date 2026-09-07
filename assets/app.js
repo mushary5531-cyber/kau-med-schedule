@@ -25,6 +25,10 @@ const I18N = {
     progressLabel: "أنجزت",
     progressOf: "من",
     markComplete: "تحديد كمُنجزة",
+    subjectDashboardTitle: "إنجاز المواد",
+    subjectDashboardSub: "قائمة محاضراتك الأساسية حسب المادة",
+    subjectProgress: "أنجزت",
+    lectures: "محاضرات",
     days: { Sunday: "الأحد", Monday: "الإثنين", Tuesday: "الثلاثاء", Wednesday: "الأربعاء", Thursday: "الخميس" }
   },
   en: {
@@ -52,6 +56,10 @@ const I18N = {
     progressLabel: "Completed",
     progressOf: "of",
     markComplete: "Mark as completed",
+    subjectDashboardTitle: "Subject progress",
+    subjectDashboardSub: "Your core lectures grouped by subject",
+    subjectProgress: "Completed",
+    lectures: "lectures",
     days: { Sunday: "Sunday", Monday: "Monday", Tuesday: "Tuesday", Wednesday: "Wednesday", Thursday: "Thursday" }
   }
 };
@@ -76,6 +84,7 @@ const els = {
   currentGroupLabel: document.getElementById("currentGroupLabel"),
   weekTabs: document.getElementById("weekTabs"),
   weekContent: document.getElementById("weekContent"),
+  subjectDashboard: document.getElementById("subjectDashboard"),
   changeSelectionBtn: document.getElementById("changeSelectionBtn"),
   langToggle: document.getElementById("langToggle"),
 };
@@ -377,18 +386,100 @@ function renderLectureChecklist(date, slot) {
   </label>`;
 }
 
-function bindChecklistEvents() {
-  els.weekContent.querySelectorAll("[data-lecture-id]").forEach(input => {
-    const row = input.closest("tr");
-    row.classList.toggle("completed", input.checked);
+function syncChecklistInputs(id, checked) {
+  document.querySelectorAll("[data-lecture-id]").forEach(input => {
+    if (input.dataset.lectureId !== id) return;
+    input.checked = checked;
+    const item = input.closest("tr, .subject-lecture");
+    if (item) item.classList.toggle("completed", checked);
+  });
+}
+
+function bindChecklistEvents(root) {
+  root.querySelectorAll("[data-lecture-id]").forEach(input => {
+    const item = input.closest("tr, .subject-lecture");
+    if (item) item.classList.toggle("completed", input.checked);
     input.addEventListener("change", () => {
       const checklist = readChecklist();
       if (input.checked) checklist[input.dataset.lectureId] = true;
       else delete checklist[input.dataset.lectureId];
       localStorage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify(checklist));
-      row.classList.toggle("completed", input.checked);
+      syncChecklistInputs(input.dataset.lectureId, input.checked);
       updateWeekProgress();
+      updateSubjectDashboardProgress();
     });
+  });
+}
+
+function subjectLectureRecords() {
+  const records = [];
+  scheduleData.weeks.forEach(week => {
+    week.days.forEach(day => {
+      (day.groups[activeGroup] || []).forEach(slot => {
+        const department = activityDepartment(slot.activity);
+        if (!department || !isCoreLecture(slot.activity)) return;
+        records.push({ department, week, day, slot });
+      });
+    });
+  });
+  return records;
+}
+
+function renderSubjectDashboard() {
+  const t = I18N[currentLang];
+  const grouped = {};
+  subjectLectureRecords().forEach(record => {
+    (grouped[record.department] ||= []).push(record);
+  });
+
+  const cards = Object.entries(grouped).map(([department, records], index) => {
+    const label = DEPARTMENTS[department][currentLang];
+    const list = records.map(({ week, day, slot }) => `
+      <div class="subject-lecture">
+        <div class="subject-lecture-copy">
+          <span>${escapeHtml(slot.activity.replace(/^[A-Za-z]+\\d*:\\s*/, ""))}</span>
+          <small>${t.weekLabel} ${week.weekNumber} · ${escapeHtml(day.date)} · ${slot.time}</small>
+        </div>
+        ${renderLectureChecklist(day.date, slot)}
+      </div>
+    `).join("");
+
+    return `<details class="subject-card" data-department="${department}" ${index === 0 ? "open" : ""}>
+      <summary>
+        <span class="subject-card-title">
+          <span class="department department-${department}">${label}</span>
+          <span class="subject-card-count"></span>
+        </span>
+        <span class="subject-card-chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div class="subject-card-progress"><span class="subject-progress-fill"></span></div>
+      <div class="subject-lectures">${list}</div>
+    </details>`;
+  }).join("");
+
+  els.subjectDashboard.innerHTML = `<section class="subject-dashboard-inner">
+    <div class="subject-dashboard-head">
+      <div>
+        <h2>${t.subjectDashboardTitle}</h2>
+        <p>${t.subjectDashboardSub}</p>
+      </div>
+    </div>
+    <div class="subject-cards">${cards}</div>
+  </section>`;
+
+  bindChecklistEvents(els.subjectDashboard);
+  updateSubjectDashboardProgress();
+}
+
+function updateSubjectDashboardProgress() {
+  const t = I18N[currentLang];
+  els.subjectDashboard.querySelectorAll(".subject-card").forEach(card => {
+    const inputs = [...card.querySelectorAll("[data-lecture-id]")];
+    const completed = inputs.filter(input => input.checked).length;
+    const count = card.querySelector(".subject-card-count");
+    count.textContent = `${t.subjectProgress} ${completed}/${inputs.length} ${t.lectures}`;
+    const fill = card.querySelector(".subject-progress-fill");
+    fill.style.width = `${inputs.length ? (completed / inputs.length) * 100 : 0}%`;
   });
 }
 
@@ -477,6 +568,7 @@ function showSchedule(group) {
   els.changeSelectionBtn.classList.remove("hidden");
   els.currentGroupLabel.textContent = group;
 
+  renderSubjectDashboard();
   buildWeekTabs();
   renderWeek(activeWeekIndex);
   scrollToToday();
@@ -528,7 +620,7 @@ function renderWeek(idx) {
   });
 
   els.weekContent.innerHTML = html;
-  bindChecklistEvents();
+  bindChecklistEvents(els.weekContent);
   updateWeekProgress();
 }
 
