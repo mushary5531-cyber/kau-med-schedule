@@ -271,6 +271,17 @@ html[dir="ltr"] .group-btn.group-b { box-shadow: inset -3px 0 0 var(--gold); }
   grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
   gap: 10px;
 }
+.subject-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 14px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  background: #fff;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
 .subject-card {
   background: #fff;
   border: 1px solid var(--border);
