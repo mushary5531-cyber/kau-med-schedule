@@ -26,9 +26,11 @@ const I18N = {
     progressOf: "من",
     markComplete: "تحديد كمُنجزة",
     subjectDashboardTitle: "إنجاز المواد",
-    subjectDashboardSub: "قائمة محاضراتك الأساسية حسب المادة",
+    subjectDashboardSub: "المحاضرات التي أُخذت حتى اليوم، مرتبة حسب المادة",
     subjectProgress: "أنجزت",
+    remaining: "باقي",
     lectures: "محاضرات",
+    noLecturesYet: "لا توجد محاضرات أساسية مسجلة حتى هذا التاريخ",
     days: { Sunday: "الأحد", Monday: "الإثنين", Tuesday: "الثلاثاء", Wednesday: "الأربعاء", Thursday: "الخميس" }
   },
   en: {
@@ -57,9 +59,11 @@ const I18N = {
     progressOf: "of",
     markComplete: "Mark as completed",
     subjectDashboardTitle: "Subject progress",
-    subjectDashboardSub: "Your core lectures grouped by subject",
+    subjectDashboardSub: "Core lectures scheduled up to today, grouped by subject",
     subjectProgress: "Completed",
+    remaining: "remaining",
     lectures: "lectures",
+    noLecturesYet: "No core lectures are scheduled up to this date",
     days: { Sunday: "Sunday", Monday: "Monday", Tuesday: "Tuesday", Wednesday: "Wednesday", Thursday: "Thursday" }
   }
 };
@@ -417,7 +421,9 @@ function subjectLectureRecords() {
     week.days.forEach(day => {
       (day.groups[activeGroup] || []).forEach(slot => {
         const department = activityDepartment(slot.activity);
+        const scheduledDate = scheduleDateKey(day.date);
         if (!department || !isCoreLecture(slot.activity)) return;
+        if (scheduledDate && scheduledDate > localDateKey()) return;
         records.push({ department, week, day, slot });
       });
     });
@@ -464,7 +470,7 @@ function renderSubjectDashboard() {
         <p>${t.subjectDashboardSub}</p>
       </div>
     </div>
-    <div class="subject-cards">${cards}</div>
+    <div class="subject-cards">${cards || `<p class="subject-empty">${t.noLecturesYet}</p>`}</div>
   </section>`;
 
   bindChecklistEvents(els.subjectDashboard);
@@ -477,7 +483,8 @@ function updateSubjectDashboardProgress() {
     const inputs = [...card.querySelectorAll("[data-lecture-id]")];
     const completed = inputs.filter(input => input.checked).length;
     const count = card.querySelector(".subject-card-count");
-    count.textContent = `${t.subjectProgress} ${completed}/${inputs.length} ${t.lectures}`;
+    const remaining = inputs.length - completed;
+    count.textContent = `${t.subjectProgress} ${completed}/${inputs.length} · ${t.remaining} ${remaining}`;
     const fill = card.querySelector(".subject-progress-fill");
     fill.style.width = `${inputs.length ? (completed / inputs.length) * 100 : 0}%`;
   });
