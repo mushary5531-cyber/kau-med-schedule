@@ -480,7 +480,7 @@ function renderSubjectDashboard() {
       <span class="backlog-icon" aria-hidden="true">✓</span>
       <div class="backlog-copy">
         <span class="backlog-title">${t.backlogTitle}</span>
-        <strong><span class="backlog-number">0</span> <span>${t.backlogUnit}</span></strong>
+        <strong><span class="backlog-number">0</span> <span class="backlog-unit"></span></strong>
         <p class="backlog-message"></p>
         <div class="backlog-track"><span class="backlog-fill"></span></div>
       </div>
@@ -493,12 +493,28 @@ function renderSubjectDashboard() {
   updateSubjectDashboardProgress();
 }
 
+function lectureUnit(count) {
+  if (currentLang !== "ar") return count === 1 ? "lecture" : "lectures";
+  const lastTwo = count % 100;
+  if (count === 1) return "محاضرة";
+  if (count === 2) return "محاضرتان";
+  if (lastTwo >= 3 && lastTwo <= 10) return "محاضرات";
+  return "محاضرة";
+}
+
+function lectureCountText(count) {
+  if (currentLang !== "ar") return `${count} ${lectureUnit(count)}`;
+  if (count === 1) return "محاضرة واحدة";
+  if (count === 2) return "محاضرتان";
+  return `${count} ${lectureUnit(count)}`;
+}
+
 function backlogStatus(remaining) {
   if (currentLang === "ar") {
-    if (remaining === 0) return { level: "clear", icon: "✓", message: "يا سلام، ما عندك أي تراكم 🎉" };
-    if (remaining <= 3) return { level: "mild", icon: "●", message: "أمورك طيبة، عندك تراكم خفيف" };
-    if (remaining <= 7) return { level: "medium", icon: "!", message: "انتبه، التراكم بدأ يزيد شوي" };
-    return { level: "high", icon: "↑", message: "أوه، عندك تراكم كثير — خذها مادة مادة" };
+    if (remaining === 0) return { level: "clear", icon: "✓", message: "ممتاز! أنت مواكب تمامًا وما عليك شيء 🎉" };
+    if (remaining <= 3) return { level: "mild", icon: "●", message: "قريب جدًا؛ خلّص الباقي وتكون مواكب تمامًا" };
+    if (remaining <= 7) return { level: "medium", icon: "!", message: "المحاضرات بدأت تتجمع شوي؛ رتّبها قبل ما تزيد" };
+    return { level: "high", icon: "↑", message: "المحاضرات تجمّعت عليك؛ ابدأ بالأقدم وخذها وحدة وحدة" };
   }
   if (remaining === 0) return { level: "clear", icon: "✓", message: "Great — you have no backlog 🎉" };
   if (remaining <= 3) return { level: "mild", icon: "●", message: "You're doing well — just a small backlog" };
@@ -513,7 +529,7 @@ function updateSubjectDashboardProgress() {
     const completed = inputs.filter(input => input.checked).length;
     const count = card.querySelector(".subject-card-count");
     const remaining = inputs.length - completed;
-    count.textContent = `${t.subjectProgress} ${completed}/${inputs.length} · ${t.remaining} ${remaining}`;
+    count.textContent = `${t.subjectProgress} ${completed}/${inputs.length} · ${t.remaining} ${lectureCountText(remaining)}`;
     const fill = card.querySelector(".subject-progress-fill");
     fill.style.width = `${inputs.length ? (completed / inputs.length) * 100 : 0}%`;
   });
@@ -529,6 +545,7 @@ function updateSubjectDashboardProgress() {
   summary.className = `backlog-summary status-${status.level}`;
   summary.querySelector(".backlog-icon").textContent = status.icon;
   summary.querySelector(".backlog-number").textContent = String(remaining);
+  summary.querySelector(".backlog-unit").textContent = lectureUnit(remaining);
   summary.querySelector(".backlog-message").textContent = status.message;
   summary.querySelector(".pace-value").textContent = `${pace}%`;
   summary.querySelector(".backlog-fill").style.width = `${pace}%`;
