@@ -514,7 +514,7 @@ function backlogStatus(remaining) {
     if (remaining === 0) return { level: "clear", icon: "✓", message: "ممتاز! أنت مواكب تمامًا وما عليك شيء 🎉" };
     if (remaining <= 3) return { level: "mild", icon: "●", message: "قريب جدًا؛ خلّص الباقي وتكون مواكب تمامًا" };
     if (remaining <= 7) return { level: "medium", icon: "!", message: "المحاضرات بدأت تتجمع شوي؛ رتّبها قبل ما تزيد" };
-    return { level: "high", icon: "↑", message: "المحاضرات تجمّعت عليك؛ ابدأ بالأقدم وخذها وحدة وحدة" };
+    return { level: "high", icon: "↑", message: "كأنها هجّت شوي 🤔 يبيلك تاخذها وحدة وحدة" };
   }
   if (remaining === 0) return { level: "clear", icon: "✓", message: "Great — you have no backlog 🎉" };
   if (remaining <= 3) return { level: "mild", icon: "●", message: "You're doing well — just a small backlog" };
