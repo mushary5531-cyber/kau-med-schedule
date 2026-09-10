@@ -31,6 +31,9 @@ const I18N = {
     remaining: "باقي",
     lectures: "محاضرات",
     noLecturesYet: "لا توجد محاضرات أساسية مسجلة حتى هذا التاريخ",
+    backlogTitle: "إجمالي المتراكم",
+    backlogUnit: "محاضرة",
+    paceLabel: "نسبة المواكبة",
     days: { Sunday: "الأحد", Monday: "الإثنين", Tuesday: "الثلاثاء", Wednesday: "الأربعاء", Thursday: "الخميس" }
   },
   en: {
@@ -64,6 +67,9 @@ const I18N = {
     remaining: "remaining",
     lectures: "lectures",
     noLecturesYet: "No core lectures are scheduled up to this date",
+    backlogTitle: "Total backlog",
+    backlogUnit: "lectures",
+    paceLabel: "On-track rate",
     days: { Sunday: "Sunday", Monday: "Monday", Tuesday: "Tuesday", Wednesday: "Wednesday", Thursday: "Thursday" }
   }
 };
@@ -470,11 +476,34 @@ function renderSubjectDashboard() {
         <p>${t.subjectDashboardSub}</p>
       </div>
     </div>
+    <div class="backlog-summary status-clear" aria-live="polite">
+      <span class="backlog-icon" aria-hidden="true">✓</span>
+      <div class="backlog-copy">
+        <span class="backlog-title">${t.backlogTitle}</span>
+        <strong><span class="backlog-number">0</span> <span>${t.backlogUnit}</span></strong>
+        <p class="backlog-message"></p>
+        <div class="backlog-track"><span class="backlog-fill"></span></div>
+      </div>
+      <span class="pace-badge"><span class="pace-value">100%</span><small>${t.paceLabel}</small></span>
+    </div>
     <div class="subject-cards">${cards || `<p class="subject-empty">${t.noLecturesYet}</p>`}</div>
   </section>`;
 
   bindChecklistEvents(els.subjectDashboard);
   updateSubjectDashboardProgress();
+}
+
+function backlogStatus(remaining) {
+  if (currentLang === "ar") {
+    if (remaining === 0) return { level: "clear", icon: "✓", message: "يا سلام، ما عندك أي تراكم 🎉" };
+    if (remaining <= 3) return { level: "mild", icon: "●", message: "أمورك طيبة، عندك تراكم خفيف" };
+    if (remaining <= 7) return { level: "medium", icon: "!", message: "انتبه، التراكم بدأ يزيد شوي" };
+    return { level: "high", icon: "↑", message: "أوه، عندك تراكم كثير — خذها مادة مادة" };
+  }
+  if (remaining === 0) return { level: "clear", icon: "✓", message: "Great — you have no backlog 🎉" };
+  if (remaining <= 3) return { level: "mild", icon: "●", message: "You're doing well — just a small backlog" };
+  if (remaining <= 7) return { level: "medium", icon: "!", message: "Heads up — your backlog is starting to grow" };
+  return { level: "high", icon: "↑", message: "Your backlog is high — take it one subject at a time" };
 }
 
 function updateSubjectDashboardProgress() {
@@ -488,6 +517,21 @@ function updateSubjectDashboardProgress() {
     const fill = card.querySelector(".subject-progress-fill");
     fill.style.width = `${inputs.length ? (completed / inputs.length) * 100 : 0}%`;
   });
+
+  const allInputs = [...els.subjectDashboard.querySelectorAll(".subject-card [data-lecture-id]")];
+  const total = allInputs.length;
+  const completed = allInputs.filter(input => input.checked).length;
+  const remaining = total - completed;
+  const pace = total ? Math.round((completed / total) * 100) : 100;
+  const status = backlogStatus(remaining);
+  const summary = els.subjectDashboard.querySelector(".backlog-summary");
+  if (!summary) return;
+  summary.className = `backlog-summary status-${status.level}`;
+  summary.querySelector(".backlog-icon").textContent = status.icon;
+  summary.querySelector(".backlog-number").textContent = String(remaining);
+  summary.querySelector(".backlog-message").textContent = status.message;
+  summary.querySelector(".pace-value").textContent = `${pace}%`;
+  summary.querySelector(".backlog-fill").style.width = `${pace}%`;
 }
 
 function updateWeekProgress() {
