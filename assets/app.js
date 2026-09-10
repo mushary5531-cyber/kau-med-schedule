@@ -535,11 +535,16 @@ function scheduleDateKey(dateText) {
     jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
     jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
   };
-  const match = dateText.trim().match(/^([A-Za-z]{3})\s+(\d{4})\s+(\d{1,2})$/);
-  if (!match) return null;
-  const month = months[match[1].toLowerCase()];
+  const value = (dateText || "").trim();
+  const dayFirst = value.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/);
+  const monthFirst = value.match(/^([A-Za-z]{3})\s+(\d{4})\s+(\d{1,2})$/);
+  const day = dayFirst ? dayFirst[1] : monthFirst ? monthFirst[3] : null;
+  const monthName = dayFirst ? dayFirst[2] : monthFirst ? monthFirst[1] : null;
+  const year = dayFirst ? dayFirst[3] : monthFirst ? monthFirst[2] : null;
+  if (!day || !monthName || !year) return null;
+  const month = months[monthName.toLowerCase()];
   if (!month) return null;
-  return `${match[2]}-${month}-${match[3].padStart(2, "0")}`;
+  return `${year}-${month}-${day.padStart(2, "0")}`;
 }
 
 function localDateKey(date = new Date()) {
